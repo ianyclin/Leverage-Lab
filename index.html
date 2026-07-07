@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>增貸投資壓力測試模擬器 v4.30 - 三引擎版</title>
+    <title>增貸投資壓力測試模擬器 v4.60.1 - 三引擎版</title>
 
     <!-- Tailwind CSS(樣式;與退休模擬器 v7.80 同為 CDN 載入) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1344,6 +1344,7 @@ const HIST_SP = { startYear: 1928, ret: [0.4381, -0.083, -0.2512, -0.4384, -0.08
       winRate: (cWins / n) * 100,
       p50LevNet: allUniverses.length ? pickP(sortedLevFinal, 0.5) : 0,
       p50BaseNet: allUniverses.length ? pickP(sortedBaseFinal, 0.5) : 0,
+      p10BaseNet: allUniverses.length ? pickP(sortedBaseFinal, 0.1) : 0, // v4.52 白話總結左尾百分比分母
       avgLoanRate: avgLoanRate,
       calib: { m: mMonthly, s: sMonthly }
     };
@@ -1667,7 +1668,6 @@ const Wallet2 = _ic('Wallet2');
 const Maximize2 = _ic('Maximize2');
 const ChevronDown = _ic('ChevronDown');
 const ChevronUp = _ic('ChevronUp');
-const Coffee = _ic('Coffee');
 const ClipboardList = _ic('ClipboardList');
 const FlaskConical = _ic('FlaskConical');
 const GraduationCap = _ic('GraduationCap');
@@ -1684,8 +1684,6 @@ const {
 } = window.LevSim;
 
 // ===== 設定保存/分享 (v3.30):所有外部輸入（localStorage/URL hash）一律經清洗器，越界取預設 =====
-const SPONSOR_URL_TW = 'https://p.ecpay.com.tw/A0E52B5'; // 綠界收款連結（台灣）
-const SPONSOR_URL = 'https://ko-fi.com/3baofan'; // Ko-fi(國際）；留空則不顯示
 const STORE_KEY = 'levsim_settings_v3';
 const DEFAULT_LOANS = [{
   id: 1,
@@ -2383,7 +2381,7 @@ const LoanCard = memo(({
     className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "text-[11px] font-bold text-slate-500 block mb-1"
-  }, "金額 (萬）"), /*#__PURE__*/React.createElement(InputSlider, {
+  }, "金額 （萬）"), /*#__PURE__*/React.createElement(InputSlider, {
     value: loan.amount,
     setter: v => onUpdate(loan.id, 'amount', v),
     min: 0,
@@ -2395,7 +2393,7 @@ const LoanCard = memo(({
     className: "text-[11px] font-bold text-slate-500 block mb-1 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement(Hourglass, {
     size: 10
-  }), " 幾年後開始投入 (延遲啟動）"), /*#__PURE__*/React.createElement(InputSlider, {
+  }), " 幾年後開始投入 （延遲啟動）"), /*#__PURE__*/React.createElement(InputSlider, {
     value: loan.startYear || 0,
     setter: v => onUpdate(loan.id, 'startYear', v),
     min: minStartYear,
@@ -2434,7 +2432,7 @@ const LoanCard = memo(({
     enableInput: true
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "text-[11px] font-bold text-slate-500 block mb-1"
-  }, "年限 (年）"), /*#__PURE__*/React.createElement(InputSlider, {
+  }, "年限 （年）"), /*#__PURE__*/React.createElement(InputSlider, {
     value: loan.years,
     setter: v => onUpdate(loan.id, 'years', v),
     min: 1,
@@ -2446,7 +2444,7 @@ const LoanCard = memo(({
     className: isInterestOnly ? "opacity-40 transition-opacity" : "transition-opacity"
   }, /*#__PURE__*/React.createElement("label", {
     className: "text-[11px] font-bold text-slate-500 block mb-1 flex justify-between"
-  }, /*#__PURE__*/React.createElement("span", null, "寬限期 (年）"), loan.enableMargin && /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "寬限期 （年）"), loan.enableMargin && /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] text-red-400 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement(Lock, {
     size: 8
@@ -2483,7 +2481,7 @@ const LoanCard = memo(({
     className: "w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500 border-slate-300"
   }), /*#__PURE__*/React.createElement("span", {
     className: `text-[11px] font-bold ${loan.enableMargin ? 'text-red-600' : 'text-slate-400'}`
-  }, "啟用維持率限制 (爆倉）"))), loan.enableMargin && /*#__PURE__*/React.createElement("div", {
+  }, "啟用維持率限制 （爆倉）"))), loan.enableMargin && /*#__PURE__*/React.createElement("div", {
     className: "animate-in slide-in-from-top-1 duration-200"
   }, /*#__PURE__*/React.createElement("label", {
     className: "text-[10px] text-red-400 block mb-1 flex items-center gap-1"
@@ -2731,6 +2729,34 @@ const CustomLegend = ({
   }));
 };
 const versionHistory = [{
+  ver: "v4.60.1",
+  title: "移除贊助入口・回退新手化 (Remove Sponsor, Revert Onboarding)",
+  desc: "①移除頁尾贊助按鈕：台灣金流（綠界）審核未過、國際平台（Ko-fi）對台灣使用者需跨境金流不便，兩者一併移除，連同 SPONSOR 常數宣告清理；保留頁尾隱私聲明（本工具完全免費・無廣告・資料只留在瀏覽器）。工具核心價值不依賴贊助入口，移除後更清爽、亦免連結失效的維護負擔；日後金流就緒可隨時放回。②回退 v4.61 的三處新手化改動，還原為 v4.60 措辭（副標改回「房貸型投資韌性分析·三引擎版」、移除標準化評估卡頂端的橋接說明句、初始自有資金標籤改回 Initial Equity）——保留 v4.60 的詮釋深度（結構定性開場、三個心法），但不採 v4.61 的新手導引層。無引擎變更、凍結值不動。"
+}, {
+  ver: "v4.61",
+  title: "新手友善化 (Onboarding Polish)",
+  desc: "以理財新手視角走查後的三處第一印象修正（不改功能與資訊架構）。①副標從行話「房貸型投資韌性分析·三引擎版 (Tri-Engine）」改為白話鉤子「『借錢投資會怎樣？』把你的貸款丟進一萬種市場走勢，先看會不會出事、值不值得」——進門第一句話新手就懂在做什麼，Tri-Engine 降為次要標籤保留給進階者。②標準化評估卡頂端新增一句橋接說明：『這張卡就是結論。由上往下讀：先看①會不會死→②買到幾年→③代價→最底白話總結，每個 ❓ 點開有解釋』——解決新手在讀說明書前就先撞到滿屏術語評估卡、不知從何讀起的問題。③初始自有資金標籤加註『目前是範例值，改成你自己的』——避免新手誤以為畫面預設數字是必填空白或建議值。無引擎變更、凍結值不動。"
+}, {
+  ver: "v4.60",
+  title: "詮釋層深化 (Deeper Interpretation)",
+  desc: "以資深資本配置者視角完善兩個最重要的解讀區塊。①白話總結新增「結構定性」開場句：綜合閘門/時間/左尾給一句話定性（站得住的結構/有效益但左尾要吞/你不需要的結構/低效但無害/不該持有的結構），描述結構性質、動詞留給使用者——回應「該不該給結論姿態」的需求，但刻意用『定性』而非『建議』，不讓模型替使用者的人生下判斷；末句從「不替你決定」升級為配置者提醒（把假設換成敢在別人面前辯護的保守值再讀一次）。②操作模擬結論在九條實跑觀察後，新增「三個心法」收束段——把散落結論提煉成可攜帶的判斷原則：先過閘門再談報酬（毀滅不可交換）、槓桿買時間且自我衰減（本業越強買到越少）、真變數是借多少與用什麼口徑（膝點決策+保守口徑紅線）。從『這組數字說什麼』提升到『你看任何槓桿都該問什麼』。無引擎變更、凍結值不動。"
+}, {
+  ver: "v4.54",
+  title: "文檔口徑稽核 (Copy Audit)",
+  desc: "全面稽核說明頁、浮層、結論、註解對現況的一致性後的單點修正：FAQ「信貸的天花板是曝險時間」一句仍以觸及口徑陳述省時（信貸 0.17/房貸 0.57),與 v4.00 起全站統一的守住口徑不一致——改為守住口徑（信貸 0.16、房貸 0.42、連續信貸 0.19),並把 P50 差統一為引擎四捨五入值 1,730 萬。稽核同時確認：❓浮層維持純定性（僅含壓力雙驗的 +2%/8%/20% 規則常數，無會過期的結果數字）；結論矩陣所有「觸及口徑」用詞皆為正確的對照標註；勝率相關措辭全站一致（降權、只數次數）；其餘硬編碼數字（結論凍結欄 tsT、版本紀錄描述）為設計內資料或歷史存檔，不需更動。無功能變更、引擎與凍結值不動。"
+}, {
+  ver: "v4.53",
+  title: "左尾百分比與白話總結精修 (Left-tail %， Commentary Trim)",
+  desc: "①白話總結左尾金額加相對百分比，分母=無貸自己的 P10 終值（引擎新增 p10BaseNet,逐位元獨立驗證、no-op 迴歸不變）：讀作『最壞那一成世界，槓桿讓我相對什麼都不做的自己 ±X%』（預設情境 +334 萬 = +4.1%）；選此分母因它是配對比較的天然對照組、不受儲蓄稀釋、對大小本金皆成立；分母 ≤0 自動隱藏。②移除「直覺校準」段——該段解釋長年期名目終值為何看似過大並提及封閉解對帳，實為開發期除錯脈絡殘留，對未參與討論的使用者只剩防衛姿態；名目/實質切換與提示已在戳記列，足以自助。③修復全形標點孤兒括號：多處 UI 標籤（如『投入 (萬）』『P50(值不值得）』）因左括號前為空格/英數而未被『中文後才轉』的掃描規則覆蓋，造成單邊全形，逐一補齊。"
+}, {
+  ver: "v4.51",
+  title: "封版後修錯 (Post-freeze Fixes)",
+  desc: "專業投資者視角全面測試後的兩處修正（依封版原則：僅修錯不加功能）。①負省時句措辭錯誤：時間為負但配對左尾為正時，舊句仍印「左尾若又為負（+X 萬）」造成語意矛盾——改為正負分流：左尾亦負=「兩頭都沒買到，沒有存在的理由」；左尾為正=「退化成純財富交易：放棄時間效率、賭終值分佈，別再用提早自由說服自己」。②限制清單補三條誠實度缺口：質押維持率以全部總資產計算（=假設永遠即時補擔保，實務銀行只盯設質部位，斷頭風險被系統性低估）；借新還舊不含手續費/違約金/聯徵審核風險（模型裡轉貸永遠核得過）；失業壓測=手動月儲蓄歸零。本輪對抗測試另驗證通過：目標已達成（省時歸零、dP10 仍有意義）、負利差（負省時+76% 負佔比）、實質負成長、跨期末貸款、σ=0 質押無假斷頭、勝率+配對負恆等 100.00、純債配置、目標過難（駝峰右尾趨零）——引擎邏輯全數自洽，凍結值不動。"
+}, {
+  ver: "v4.50",
+  title: "目標反推、寬限斷崖與封版 (Goal Anchor, Grace Cliff & Feature Freeze)",
+  desc: "①目標支出反推：目標金額下方新增計算器——年支出 ÷ 提領率 = 目標（4%=25 倍、2.5%=40 倍年支出），一鍵套用；決策框架新增「目標怎麼訂」條（省時是目標相對的駝峰函數，目標太易或太難省時都趨近 0,用支出錨定結論才穩）；新手操作流程同步。②寬限斷崖標示：閘門區依貸款結構自動標出台灣房貸真正的風險時刻——寬限結束月付跳升（寬限月付 → 攤還月付、跳升倍數、屆時佔月儲蓄比例，>33% 轉琥珀、>50% 轉紅），到期還本型另標「再融資風險集中在同一時點」；純結構資訊、不依賴模擬結果。③封版聲明：核心迴圈（填資料 → 閘門 → 時間 → 代價 → 階梯 → 白話總結）自 v4.00 框架起已完整且哲學自洽——標量全是投影、合成分數永不做、毀滅不可交換、守住才算自由、配對優於分位、勝率降權、膝點優於有無。v4.50 起僅修錯不加功能；v5 的內容由實際使用者的問題決定，不由開發者的想像力決定。候選（未承諾）：利率路徑、目標多錨並列、評估卡匯出圖檔。"
+}, {
   ver: "v4.30",
   title: "白話總結 v2 與全形標點 (Commentary v2 & Full-width)",
   desc: "①白話總結升級為情境分支引擎：閘門（零死亡/硬死亡/帳面破產）之後，時間軸依三種情境分流——顯著省時（附差運一成的實際省時，並在觸及→守住蒸發 >25% 時追加『順序風險警示』與滑翔鎖定建議）、微量省時（dP10 為負時直說『不是危險，是不需要』——引擎夠強、付確定利息買壞運倒虧的交易；dP10 為正則標為『無害但低效』）、負省時（兩頭都沒買到）；行為（水下 ≥5 年）與滑翔（保費解讀）條件句保留；新增『直覺校準』——長年期名目口徑下自動換算今日購買力並給出幾何年化×倍數（名目幾何 9.6%、30 年=15.6 倍），長期複利本來就會長出讓人懷疑算錯的數字，並註明終值有 σ=0 封閉解逐月對帳護著（本輪實測：引擎與獨立重寫迴圈精確全等，儲蓄慣例=逐月連續成長、期末投入）。②「逐世界分佈 P10/P50/P90」改白話：『省時分佈：差運/中位/好運』，懸停解釋分位=一萬個世界排序後的名次、且為配對相減的分位。③全部中文語境的半形標點統一為全形（，；：？！（））；規則=中文字元後的符號才轉換，程式碼標點不受影響。"
@@ -3030,7 +3056,9 @@ const App = () => {
   const [stressData, setStressData] = useState(null); // 壓力雙驗（v4.00)
   const [stressing, setStressing] = useState(false);
   const [ladderData, setLadderData] = useState(null); // 規模階梯（v4.00)
-  const [explainKey, setExplainKey] = useState(null); // 評估卡白話浮層（v4.10)
+  const [explainKey, setExplainKey] = useState(null);
+  const [goalSpend, setGoalSpend] = useState(120); // 目標反推：年支出（萬）
+  const [goalWr, setGoalWr] = useState(2.5); // 目標反推：提領率（%）      // 評估卡白話浮層（v4.10)
   const [laddering, setLaddering] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [exportState, setExportState] = useState('idle');
@@ -3307,7 +3335,7 @@ const App = () => {
       tl = stats.timeStats && stats.timeStats.lev || {},
       tb = stats.timeStats && stats.timeStats.base || {};
     const activeLoans = loans.filter(l => l.amount > 0).map(l => `${l.name.replace('貸款 ', '')} ${l.amount}萬@${l.rate}%/${l.years}年${l.grace > 0 ? `寬${l.grace}` : ''}${l.repayAtMaturity ? '·到期還本' : ''}${l.enableMargin ? `·維持率${l.maintenanceMargin}%` : ''}`).join('、') || '無';
-    const lines = [`📊 增貸投資壓力測試模擬器 v4.30｜標準化評估`, `【戳記】${ENGINE_NAMES[f.riskEngine] || f.riskEngine}｜μ${f.effReturn.toFixed(1)}/σ${f.effVol.toFixed(1)}${stockPct < 100 ? `｜股${stockPct}/債${100 - stockPct}` : ''}｜${f.displayMode === 'real' ? `實質 π${inflation}%` : '名目'}｜${years} 年 × ${(f.nTrials || 0).toLocaleString()} 路徑｜#${f.seed}`, `本金 ${initialCapital} 萬＋月存 ${monthlySavings} 萬｜目標 ${targetAmount} 萬｜貸款：${activeLoans}`, glideEnabled ? `滑翔：進度 ${glideStartProgress}% 起降至 ${glideEndStock}% 股${glidePrepay && glidePrepayAmt > 0 ? `＋加速還本 ${glidePrepayAmt} 萬/月` : ''}` : null, `【閘門】失敗∪ ${fmt(f.pctFailUnion)}%（歸零 ${fmt(f.pctNWZero)}｜斷裂 ${fmt(f.pctCashBreak)}｜斷頭 ${fmt(f.pctMarginCall)})${stressData ? `｜壓力雙驗：${stressData.pass ? '🟢通過' : '🔴不過關'}(利率+2% ${stressData.a.fu.toFixed(2)}%・保守常態 ${stressData.b.fu.toFixed(2)}%）` : ''}`, `【時間・守住口徑】期望省時 ${fmt(f.expTimeSavedSust, 2)} 年（觸及 ${fmt(f.expTimeSaved, 2)}）｜分佈 P10/P50/P90:${fmt(f.tsSustP10, 2)}/${fmt(f.tsSustP50, 2)}/${fmt(f.tsSustP90, 2)}｜更晚自由的世界 ${fmt(f.tsSustNegPct)}%｜守住率 ${fmt(f.reachSustLevPct)}/${fmt(f.reachSustBasePct)}%｜守住中位 ${fmt(f.t50SustLev)}/${fmt(f.t50SustBase)} 年`, `【代價】總利息中位 ${fmt(f.interestP50, 0)} 萬${f.expTimeSavedSust >= 0.3 ? `(每提早一年約 ${Math.round(f.interestP50 / f.expTimeSavedSust)} 萬）` : ''}｜最差一成世界：財富 ${f.dP10 >= 0 ? '+' : ''}${fmt(f.dP10, 0)} 萬・省時 ${fmt(f.tsSustP10, 2)} 年｜最長水下 ${fmt(f.uwP50Lev)} vs ${fmt(f.uwP50Base)} 年`, `【參考】中位終值 ${fmt(lv.p50NetWorth, 0)}/${fmt(f.p50BaseNet, 0)} 萬｜勝率（已降權） ${fmt(f.winRate)}%`, `⚠ 稅前、利率與房價固定；模擬非投資建議`].filter(x => x !== null);
+    const lines = [`📊 增貸投資壓力測試模擬器 v4.60.1｜標準化評估`, `【戳記】${ENGINE_NAMES[f.riskEngine] || f.riskEngine}｜μ${f.effReturn.toFixed(1)}/σ${f.effVol.toFixed(1)}${stockPct < 100 ? `｜股${stockPct}/債${100 - stockPct}` : ''}｜${f.displayMode === 'real' ? `實質 π${inflation}%` : '名目'}｜${years} 年 × ${(f.nTrials || 0).toLocaleString()} 路徑｜#${f.seed}`, `本金 ${initialCapital} 萬＋月存 ${monthlySavings} 萬｜目標 ${targetAmount} 萬｜貸款：${activeLoans}`, glideEnabled ? `滑翔：進度 ${glideStartProgress}% 起降至 ${glideEndStock}% 股${glidePrepay && glidePrepayAmt > 0 ? `＋加速還本 ${glidePrepayAmt} 萬/月` : ''}` : null, `【閘門】失敗∪ ${fmt(f.pctFailUnion)}%（歸零 ${fmt(f.pctNWZero)}｜斷裂 ${fmt(f.pctCashBreak)}｜斷頭 ${fmt(f.pctMarginCall)})${stressData ? `｜壓力雙驗：${stressData.pass ? '🟢通過' : '🔴不過關'}(利率+2% ${stressData.a.fu.toFixed(2)}%・保守常態 ${stressData.b.fu.toFixed(2)}%）` : ''}`, `【時間・守住口徑】期望省時 ${fmt(f.expTimeSavedSust, 2)} 年（觸及 ${fmt(f.expTimeSaved, 2)}）｜分佈 P10/P50/P90:${fmt(f.tsSustP10, 2)}/${fmt(f.tsSustP50, 2)}/${fmt(f.tsSustP90, 2)}｜更晚自由的世界 ${fmt(f.tsSustNegPct)}%｜守住率 ${fmt(f.reachSustLevPct)}/${fmt(f.reachSustBasePct)}%｜守住中位 ${fmt(f.t50SustLev)}/${fmt(f.t50SustBase)} 年`, `【代價】總利息中位 ${fmt(f.interestP50, 0)} 萬${f.expTimeSavedSust >= 0.3 ? `(每提早一年約 ${Math.round(f.interestP50 / f.expTimeSavedSust)} 萬）` : ''}｜最差一成世界：財富 ${f.dP10 >= 0 ? '+' : ''}${fmt(f.dP10, 0)} 萬・省時 ${fmt(f.tsSustP10, 2)} 年｜最長水下 ${fmt(f.uwP50Lev)} vs ${fmt(f.uwP50Base)} 年`, `【參考】中位終值 ${fmt(lv.p50NetWorth, 0)}/${fmt(f.p50BaseNet, 0)} 萬｜勝率（已降權） ${fmt(f.winRate)}%`, `⚠ 稅前、利率與房價固定；模擬非投資建議`].filter(x => x !== null);
     return lines.join('\n');
   };
   const exportSummary = () => {
@@ -4115,7 +4143,7 @@ const App = () => {
     className: "p-2 bg-indigo-600 rounded-lg text-white shadow-md"
   }, " ", /*#__PURE__*/React.createElement(Activity, {
     size: 24
-  }), " "), "增貸投資壓力測試模擬器 v4.30"), /*#__PURE__*/React.createElement("p", {
+  }), " "), "增貸投資壓力測試模擬器 v4.60.1"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-500 mt-2 text-sm md:text-base font-medium"
   }, " 房貸型投資韌性分析： ", /*#__PURE__*/React.createElement("span", {
     className: "text-indigo-600 font-bold"
@@ -4156,9 +4184,9 @@ const App = () => {
     className: "text-amber-600"
   }, "淨值歸零"), ":資產跌到比負債還少，帳面上已經破產。房貸", /*#__PURE__*/React.createElement("b", null, "不會"), "被斷頭——它唯一的死法是繳不出錢。")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-bold text-slate-800 mb-1"
-  }, "③ 四步上手"), /*#__PURE__*/React.createElement("p", null, "1. 左欄照實填：", /*#__PURE__*/React.createElement("b", null, "自有資金、每月儲蓄"), "(填保守值，它是你的第一道防線）、目標金額。", /*#__PURE__*/React.createElement("br", null), "2. 貸款組合：不知道怎麼填，按卡片右上的「", /*#__PURE__*/React.createElement("b", null, "指南"), "」，五種常見貸款（房貸/信貸/質押…）有台灣行情範例。", /*#__PURE__*/React.createElement("br", null), "3. 按右上大按鈕「", /*#__PURE__*/React.createElement("b", null, "🎲 重擲 10,000 個平行宇宙"), "」。", /*#__PURE__*/React.createElement("br", null), "4. 看「標準化評估」卡，順序固定：", /*#__PURE__*/React.createElement("b", null, "①閘門"), "(三種死法的比例——任何紅字不是零，先停下來改結構，後面的效益不用看）、", /*#__PURE__*/React.createElement("b", null, "②買到的時間"), "(借錢版平均比不借版早幾年「達標且守住」——旁邊的", /*#__PURE__*/React.createElement("b", null, "負佔比"), "是槓桿反而讓你更晚自由的世界比例）、", /*#__PURE__*/React.createElement("b", null, "③代價"), "(總利息、「每提早一年」的價格、最差一成世界你比不借的自己窮多少）。勝率還在，但降權了——它只數輸贏次數，看不見輸贏幅度。有貸款時再按「壓力雙驗」和「規模階梯」，前者驗升息+保守假設下還活不活得下來，後者告訴你「借多少」比「借不借」更重要。每一節旁邊都有 ❓,點開是白話解釋；卡片底部的「💬 白話總結」會把這次結果用人話講一遍。")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
+  }, "③ 四步上手"), /*#__PURE__*/React.createElement("p", null, "1. 左欄照實填：", /*#__PURE__*/React.createElement("b", null, "自有資金、每月儲蓄"), "（填保守值，它是你的第一道防線）、目標金額——不知道目標訂多少，用它下方的「以支出反推」：年支出 ÷ 提領率（例：年花 120 萬 ÷ 2.5% = 4,800 萬）。", /*#__PURE__*/React.createElement("br", null), "2. 貸款組合：不知道怎麼填，按卡片右上的「", /*#__PURE__*/React.createElement("b", null, "指南"), "」，五種常見貸款（房貸/信貸/質押…）有台灣行情範例。", /*#__PURE__*/React.createElement("br", null), "3. 按右上大按鈕「", /*#__PURE__*/React.createElement("b", null, "🎲 重擲 10,000 個平行宇宙"), "」。", /*#__PURE__*/React.createElement("br", null), "4. 看「標準化評估」卡，順序固定：", /*#__PURE__*/React.createElement("b", null, "①閘門"), "（三種死法的比例——任何紅字不是零，先停下來改結構，後面的效益不用看）、", /*#__PURE__*/React.createElement("b", null, "②買到的時間"), "（借錢版平均比不借版早幾年「達標且守住」——旁邊的", /*#__PURE__*/React.createElement("b", null, "負佔比"), "是槓桿反而讓你更晚自由的世界比例）、", /*#__PURE__*/React.createElement("b", null, "③代價"), "（總利息、「每提早一年」的價格、最差一成世界你比不借的自己窮多少）。勝率還在，但降權了——它只數輸贏次數，看不見輸贏幅度。有貸款時再按「壓力雙驗」和「規模階梯」，前者驗升息+保守假設下還活不活得下來，後者告訴你「借多少」比「借不借」更重要。每一節旁邊都有 ❓,點開是白話解釋；卡片底部的「💬 白話總結」會把這次結果用人話講一遍。")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-bold text-slate-800 mb-1"
-  }, "④ 看懂結果的最低標準"), /*#__PURE__*/React.createElement("p", null, "勝率高不代表該做——勝率 80% 意味著", /*#__PURE__*/React.createElement("b", null, "五個世界有一個你會後悔"), "。順序永遠是：先看失敗分解（能不能活），再看勝率與 P50(值不值得），最後用「情境壓測」的利率 +2% 再驗一次（升息時還活得下來嗎）。任何一關紅燈，回頭改結構：降金額、拉長年期、換掉會斷頭的貸款。")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
+  }, "④ 看懂結果的最低標準"), /*#__PURE__*/React.createElement("p", null, "勝率高不代表該做——勝率 80% 意味著", /*#__PURE__*/React.createElement("b", null, "五個世界有一個你會後悔"), "。順序永遠是：先看失敗分解（能不能活），再看勝率與 P50（值不值得），最後用「情境壓測」的利率 +2% 再驗一次（升息時還活得下來嗎）。任何一關紅燈，回頭改結構：降金額、拉長年期、換掉會斷頭的貸款。")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-bold text-slate-800 mb-1"
   }, "⑤ 這工具不告訴你什麼"), /*#__PURE__*/React.createElement("p", null, "它不告訴你「該不該借、該借多少」——那是你的決定；它給你的是", /*#__PURE__*/React.createElement("b", null, "後果的完整分佈"), ",包括那些你不想看的。想深入原理、判讀與決策框架，頁尾有「進階手冊」；想看作者自己測出來的結論，展開下方「操作模擬結論」。")))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
@@ -4185,7 +4213,7 @@ const App = () => {
     className: "px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100"
   }, /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-[11px] text-slate-400"
-  }, "口徑：30 年 × 10,000 條路徑、種子 #12345、常態引擎 μ 10.4%/σ 15.6%（=", /*#__PURE__*/React.createElement("b", null, "股 80/債 20 的自動帶入值，亦即 v4.10 起的預設口徑"), "）、本金 300 萬、目標 1,000 萬、月存 5 萬（標註者為 1 萬）；C10 為純歷史回測 80/20 聯合；⏱ 為", /*#__PURE__*/React.createElement("b", null, "守住口徑"), "(達標且此後不再跌破——觸及後跌回去不算自由）。數字由引擎實跑後凍結並納入驗證套件——引擎行為若改變，測試會變紅。「載入」會覆蓋目前全部設定以精確重現。"), /*#__PURE__*/React.createElement("div", {
+  }, "口徑：30 年 × 10,000 條路徑、種子 #12345、常態引擎 μ 10.4%/σ 15.6%（=", /*#__PURE__*/React.createElement("b", null, "股 80/債 20 的自動帶入值，亦即 v4.10 起的預設口徑"), "）、本金 300 萬、目標 1,000 萬、月存 5 萬（標註者為 1 萬）；C10 為純歷史回測 80/20 聯合；⏱ 為", /*#__PURE__*/React.createElement("b", null, "守住口徑"), "（達標且此後不再跌破——觸及後跌回去不算自由）。數字由引擎實跑後凍結並納入驗證套件——引擎行為若改變，測試會變紅。「載入」會覆蓋目前全部設定以精確重現。"), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 overflow-x-auto no-scrollbar"
   }, /*#__PURE__*/React.createElement("table", {
     className: "w-full text-[11px] min-w-[700px]"
@@ -4241,8 +4269,20 @@ const App = () => {
     className: "font-bold text-slate-800"
   }, "結論（從上表讀出來的，不是感覺）"), /*#__PURE__*/React.createElement("ol", {
     className: "list-decimal pl-5 space-y-1.5"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "排序在任何口徑下都成立"), ":房貸（98.2%）>房＋信（97.1%）>滑翔房貸（95.2%）>連續信貸（88.3%）>質押（83.0%）≈信貸（82.0%）。長年期＋低利＋寬限的優勢是結構性的，不是運氣。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "信貸的天花板是曝險時間"), ":7 年就把錢還回去，P50 只多 261 萬、期望只省 0.17 年（房貸：多 1,731 萬、省 0.57 年）。「連續信貸」借新還舊把它拉到 88.3%/0.23 年——延長曝險時間就是這招的全部意義，代價是永遠在繳月付。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "⏱ 槓桿買的是時間，而效率和你自己的引擎成反比"), ":月存 5 萬的人（無貸 6.1 年就守住目標），200 萬房貸只買到 ", /*#__PURE__*/React.createElement("b", null, "0.42 年"), ";月存 1 萬的人（無貸要 11.1 年），同一組貸款買到 ", /*#__PURE__*/React.createElement("b", null, "1.77 年"), "。而且注意：觸及口徑的 0.57 年到守住口徑剩 0.42——", /*#__PURE__*/React.createElement("b", null, "蒸發的 26% 就是順序風險"), "(摸到目標又被打回去的世界）。價格：82 萬總息 ÷ 0.42 年 ≈ 每提早一年 196 萬。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "配對左尾把結構分開，勝率做不到"), ":房貸最差一成的世界仍比不借", /*#__PURE__*/React.createElement("b", null, "多 334 萬"), ";信貸是 ", /*#__PURE__*/React.createElement("b", null, "−62 萬"), "、質押 ", /*#__PURE__*/React.createElement("b", null, "−180 萬"), "——最差一成反而更窮。勝率只數輸贏次數、看不見幅度；這就是本版把勝率從英雄位置降下來的理由。負佔比同理：房貸 6.1% 的世界更晚自由，質押 13.2%。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "升息先砍期望值、後砍安全性"), ":房貸利率 +2%，勝率 98.2→92.3、失敗仍 0——這筆交易會先變得不划算，早於變得危險。所以紅線是利差，不只是繳款能力。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "質押的病是結構不是利率"), ":只還息＋到期還本把再融資風險全押在第 5 年，維持率再補一刀——它是表裡唯一會「斷頭」的，而且勝率天生偏低。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "⚠ 口徑決定你看不看得到風險"), ":同一組「房＋信、月存 1 萬」，歷史均值口徑失敗 0.01%、負佔比 3.1%；換保守口徑（8%/20%）失敗 ", /*#__PURE__*/React.createElement("b", null, "1.07%"), "、負佔比 ", /*#__PURE__*/React.createElement("b", null, "16.8%"), "、最差一成世界 ", /*#__PURE__*/React.createElement("b", null, "−151 萬"), ";再疊升息：失敗 1.94%、負佔比 ", /*#__PURE__*/React.createElement("b", null, "33%"), "、守住率掉到 91.2%——", /*#__PURE__*/React.createElement("b", null, "低於不借錢的 94.4%"), "。樂觀口徑把這一切全藏起來。評估卡的「壓力雙驗」按鈕就是為此存在：利率 +2% 與保守常態兩關都 ≤1% 才算結構通過。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "滑翔＋還本是買保險"), ":勝率仍 95.2%，但 P50 從 18,602 縮到 7,708(兩側同策略）——上檔交出去換確定性。適合已接近目標的人，不適合累積早期。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "建議紅線（可直接抄）"), ":只用房貸型；寬限內月付 ≤ 月儲蓄 1/3;質押/融資不碰；「利率 +2%」與「保守 μ(如 8%）」兩個情境都貼零才進場；進度過七成開滑翔＋加速還本。")), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-slate-400"
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "排序在任何口徑下都成立"), ":房貸（98.2%）>房＋信（97.1%）>滑翔房貸（95.2%）>連續信貸（88.3%）>質押（83.0%）≈信貸（82.0%）。長年期＋低利＋寬限的優勢是結構性的，不是運氣。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "信貸的天花板是曝險時間"), ":7 年就把錢還回去，P50 只多 261 萬、守住省時只 0.16 年（同期房貸：多 1,730 萬、守住省 0.42 年）。「連續信貸」借新還舊把勝率拉到 88.3%、守住省時 0.19 年——延長曝險時間就是這招的全部意義，代價是永遠在繳月付。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "⏱ 槓桿買的是時間，而效率和你自己的引擎成反比"), ":月存 5 萬的人（無貸 6.1 年就守住目標），200 萬房貸只買到 ", /*#__PURE__*/React.createElement("b", null, "0.42 年"), ";月存 1 萬的人（無貸要 11.1 年），同一組貸款買到 ", /*#__PURE__*/React.createElement("b", null, "1.77 年"), "。而且注意：觸及口徑的 0.57 年到守住口徑剩 0.42——", /*#__PURE__*/React.createElement("b", null, "蒸發的 26% 就是順序風險"), "（摸到目標又被打回去的世界）。價格：82 萬總息 ÷ 0.42 年 ≈ 每提早一年 196 萬。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "配對左尾把結構分開，勝率做不到"), ":房貸最差一成的世界仍比不借", /*#__PURE__*/React.createElement("b", null, "多 334 萬"), ";信貸是 ", /*#__PURE__*/React.createElement("b", null, "−62 萬"), "、質押 ", /*#__PURE__*/React.createElement("b", null, "−180 萬"), "——最差一成反而更窮。勝率只數輸贏次數、看不見幅度；這就是本版把勝率從英雄位置降下來的理由。負佔比同理：房貸 6.1% 的世界更晚自由，質押 13.2%。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "升息先砍期望值、後砍安全性"), ":房貸利率 +2%，勝率 98.2→92.3、失敗仍 0——這筆交易會先變得不划算，早於變得危險。所以紅線是利差，不只是繳款能力。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "質押的病是結構不是利率"), ":只還息＋到期還本把再融資風險全押在第 5 年，維持率再補一刀——它是表裡唯一會「斷頭」的，而且勝率天生偏低。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "⚠ 口徑決定你看不看得到風險"), ":同一組「房＋信、月存 1 萬」，歷史均值口徑失敗 0.01%、負佔比 3.1%；換保守口徑（8%/20%）失敗 ", /*#__PURE__*/React.createElement("b", null, "1.07%"), "、負佔比 ", /*#__PURE__*/React.createElement("b", null, "16.8%"), "、最差一成世界 ", /*#__PURE__*/React.createElement("b", null, "−151 萬"), ";再疊升息：失敗 1.94%、負佔比 ", /*#__PURE__*/React.createElement("b", null, "33%"), "、守住率掉到 91.2%——", /*#__PURE__*/React.createElement("b", null, "低於不借錢的 94.4%"), "。樂觀口徑把這一切全藏起來。評估卡的「壓力雙驗」按鈕就是為此存在：利率 +2% 與保守常態兩關都 ≤1% 才算結構通過。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "滑翔＋還本是買保險"), ":勝率仍 95.2%，但 P50 從 18,602 縮到 7,708（兩側同策略）——上檔交出去換確定性。適合已接近目標的人，不適合累積早期。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "建議紅線（可直接抄）"), ":只用房貸型；寬限內月付 ≤ 月儲蓄 1/3；質押/融資不碰；「利率 +2%」與「保守 μ（如 8%）」兩個情境都貼零才進場；進度過七成開滑翔＋加速還本。")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 pt-3 border-t border-slate-200"
+  }, /*#__PURE__*/React.createElement("h5", {
+    className: "font-bold text-slate-800 mb-2"
+  }, "把上面九條提煉成三個心法（看任何槓桿都適用）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 text-[11px] leading-relaxed"
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-indigo-700"
+  }, "一、先過閘門，再談報酬——這兩件事不可交換。"), "毀滅是吸收態：死一次，後面再高的報酬都與你無關，所以它只能當「一票否決」的關卡，不能被期望值平均掉。任何把「爆倉 2%、但期望報酬很高」講成划算的分析，都在犯這個錯。你的第一個問題永遠是「最壞情況我死不死」，不是「平均我賺多少」。"), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-indigo-700"
+  }, "二、槓桿買的是時間，不是報酬——而且它會自我衰減。"), "把貸款投進市場，賺的是「提早幾年到目標」，不是「多賺幾%」。關鍵的反直覺是：你本業越強、儲蓄越多，這筆槓桿能買到的時間越少（分母一直變大、槓桿一直被稀釋）。所以同一筆貸款，對月存一萬的人是加速器，對月存五萬的人可能只是一張 82 萬利息的收據。動手前先誠實回答：我是在買時間，還是在買「我其實不缺的」報酬？"), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", {
+    className: "text-indigo-700"
+  }, "三、真正的變數是「借多少」和「用什麼口徑看」，不是「借不借」。"), "「借不借」是假問題——規模階梯會告訴你每一塊槓桿的邊際效益何時崩掉（膝點），那才是決策點。而你用什麼假設看它，決定你看不看得到風險：樂觀口徑會把負佔比、左尾、升息脆弱性全藏起來。紀律是：報酬假設只准往保守調，紅線檢查永遠用「保守 μ＋升息」兩關一起看——樂觀的版本留給美夢，別留給決策。"))), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400 mt-3"
   }, "以上是「這組口徑下」的結論——你的本金、儲蓄、目標不同，結論可能不同。把情境載入後改成自己的數字，重跑一次，結論要自己長出來。"))))), /*#__PURE__*/React.createElement("div", {
     className: "max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6"
   }, /*#__PURE__*/React.createElement("div", {
@@ -4269,7 +4309,7 @@ const App = () => {
     enableInput: true
   }), " "), /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
     className: "text-xs font-bold text-slate-600 mb-1.5 block"
-  }, "每月儲蓄投入 (萬）"), " ", /*#__PURE__*/React.createElement(InputSlider, {
+  }, "每月儲蓄投入 （萬）"), " ", /*#__PURE__*/React.createElement(InputSlider, {
     value: monthlySavings,
     setter: setMonthlySavings,
     min: 0,
@@ -4289,7 +4329,7 @@ const App = () => {
     enableInput: true
   }), " "), /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
     className: "text-xs font-bold text-slate-600 mb-1.5 block"
-  }, "🎯 目標金額 (萬）"), " ", /*#__PURE__*/React.createElement(InputSlider, {
+  }, "🎯 目標金額 （萬）"), " ", /*#__PURE__*/React.createElement(InputSlider, {
     value: targetAmount,
     setter: setTargetAmount,
     min: 500,
@@ -4297,7 +4337,39 @@ const App = () => {
     step: 50,
     suffix: "",
     enableInput: true
-  }), " "))), /*#__PURE__*/React.createElement("div", {
+  }), " "), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] font-bold text-slate-500 mb-1.5"
+  }, "以支出反推目標（讓目標有經濟意義，而不是湊整數）"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 flex-wrap text-[11px]"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "年支出"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: goalSpend,
+    onChange: e => setGoalSpend(Math.max(0, parseFloat(e.target.value) || 0)),
+    className: "w-16 text-xs font-mono text-right bg-white border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-indigo-300"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "萬 ÷ 提領率"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    step: "0.1",
+    value: goalWr,
+    onChange: e => setGoalWr(Math.max(0.1, parseFloat(e.target.value) || 0.1)),
+    className: "w-14 text-xs font-mono text-right bg-white border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-indigo-300"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "% ="), /*#__PURE__*/React.createElement("b", {
+    className: "font-mono text-indigo-700"
+  }, Math.round(goalSpend / (goalWr / 100)).toLocaleString()), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "萬"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTargetAmount(Math.min(100000, Math.max(100, Math.round(goalSpend / (goalWr / 100))))),
+    className: "text-[10px] px-2 py-0.5 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold transition-colors"
+  }, "套用")), /*#__PURE__*/React.createElement("p", {
+    className: "text-[9px] text-slate-400 mt-1 leading-tight"
+  }, "提領率 4%=25 倍年支出、2.5%=40 倍。省時指標對「目標訂在哪」很敏感（目標太易或太難，省時都會趨近 0）——用支出錨定，結論才穩。")))), /*#__PURE__*/React.createElement("div", {
     className: "bg-slate-100/50 rounded-2xl p-2 border border-slate-200/60"
   }, /*#__PURE__*/React.createElement("div", {
     className: "px-3 py-2 flex items-center justify-between mb-2 flex-wrap gap-y-1"
@@ -4305,7 +4377,7 @@ const App = () => {
     className: "font-bold text-slate-700 text-sm flex items-center gap-2"
   }, " ", /*#__PURE__*/React.createElement(Landmark, {
     className: "w-4 h-4 text-indigo-600"
-  }), " 貸款組合 (全額投入） "), /*#__PURE__*/React.createElement("div", {
+  }), " 貸款組合 （全額投入） "), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowLoanGuide(!showLoanGuide),
@@ -4432,7 +4504,7 @@ const App = () => {
     className: "text-indigo-700"
   }, "對應年化（1928–2025 歷史）"), ":μ ", /*#__PURE__*/React.createElement("b", null, (bl.mean * 100).toFixed(1), "%"), " / σ ", /*#__PURE__*/React.createElement("b", null, (bl.sd * 100).toFixed(1), "%"), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-400"
-  }, "(股 11.9/19.3、美國10年期公債 4.8/7.9、相關 +0.02)")), /*#__PURE__*/React.createElement("p", {
+  }, "（股 11.9/19.3、美國10年期公債 4.8/7.9、相關 +0.02）")), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400 mt-1.5 leading-tight"
   }, "調整配置會", /*#__PURE__*/React.createElement("b", null, "自動帶入"), "下方報酬/波動（仍可手動微調）。常態分佈=以帶入值跑單資產參數模型；歷史抽樣/純歷史在股票 <100% 時改跑「", /*#__PURE__*/React.createElement("b", null, "股債聯合歷史"), "」（同年成對取出、每月再平衡，滑桿不生效）；滑翔的「達標時股票比例」直接作用於此權重。債券資料已與退休模擬器 v7.80 逐年核對（Damodaran 1928–2025）。")), /*#__PURE__*/React.createElement("div", {
     className: "mb-4"
@@ -4467,7 +4539,7 @@ const App = () => {
   }, "名目"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setDisplayMode('real'),
     className: `flex-1 px-1 py-1.5 rounded-md transition-all ${displayMode === 'real' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`
-  }, "實質 (今日購買力）")), displayMode === 'real' && /*#__PURE__*/React.createElement("div", {
+  }, "實質 （今日購買力）")), displayMode === 'real' && /*#__PURE__*/React.createElement("div", {
     className: "mt-2.5"
   }, /*#__PURE__*/React.createElement("label", {
     className: "text-[11px] font-bold text-slate-500 block mb-1"
@@ -4485,7 +4557,7 @@ const App = () => {
     className: `space-y-5 transition-opacity duration-300 ${activeScenario ? 'opacity-50 pointer-events-none grayscale' : ''}`
   }, /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
     className: "text-xs font-bold text-slate-600 mb-1.5 block"
-  }, "預期年化報酬 (年算術平均・名目） %"), " ", /*#__PURE__*/React.createElement(InputSlider, {
+  }, "預期年化報酬 （年算術平均・名目） %"), " ", /*#__PURE__*/React.createElement(InputSlider, {
     value: expReturn,
     setter: setExpReturn,
     min: -5,
@@ -4500,7 +4572,7 @@ const App = () => {
     className: "text-[10px] text-slate-400 -mt-3 leading-tight"
   }, "口徑：年報酬的算術平均（含通膨）。幾何（複合）報酬會低於此值約 σ²/2。"), /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
     className: "text-xs font-bold text-slate-600 mb-1.5 block"
-  }, "年化波動率 (年標準差・名目） %"), " ", /*#__PURE__*/React.createElement(InputSlider, {
+  }, "年化波動率 （年標準差・名目） %"), " ", /*#__PURE__*/React.createElement(InputSlider, {
     value: volatility,
     setter: setVolatility,
     min: 5,
@@ -4515,9 +4587,9 @@ const App = () => {
     className: "text-slate-700"
   }, geoOf(stats.failure.effReturn, stats.failure.effVol).toFixed(2), "%"), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-400"
-  }, "(依目前有效 μ/σ;模型精確值 exp(12m)−1)")), " "), /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
+  }, "（依目前有效 μ/σ；模型精確值 exp(12m)−1）")), " "), /*#__PURE__*/React.createElement("div", null, " ", /*#__PURE__*/React.createElement("label", {
     className: "text-xs font-bold text-slate-600 mb-1.5 block flex justify-between"
-  }, " ", /*#__PURE__*/React.createElement("span", null, "模擬年限 (年）"), " ", /*#__PURE__*/React.createElement("span", {
+  }, " ", /*#__PURE__*/React.createElement("span", null, "模擬年限 （年）"), " ", /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] font-normal text-slate-400"
   }, "模擬長期投資請選擇30年"), " "), " ", /*#__PURE__*/React.createElement(InputSlider, {
     value: years,
@@ -4666,7 +4738,7 @@ const App = () => {
     className: "animate-spin"
   }) : /*#__PURE__*/React.createElement(Scale, {
     size: 12
-  }), comparing ? '運算中…' : compareData ? '重新比較' : '執行比較 (約數秒）')), compareData && /*#__PURE__*/React.createElement("div", {
+  }), comparing ? '運算中…' : compareData ? '重新比較' : '執行比較 （約數秒）')), compareData && /*#__PURE__*/React.createElement("div", {
     className: "mt-3 overflow-x-auto no-scrollbar"
   }, /*#__PURE__*/React.createElement("table", {
     className: "w-full text-[11px] min-w-[560px]"
@@ -4772,7 +4844,38 @@ const App = () => {
       className: "text-[10px] text-slate-500 font-bold"
     }, nm), /*#__PURE__*/React.createElement("div", {
       className: "text-[8px] text-slate-400"
-    }, sub)))), spread < 2 && /*#__PURE__*/React.createElement("p", {
+    }, sub)))), (() => {
+      const cliffs = [];
+      loans.forEach(l => {
+        if (!(l.amount > 0)) return;
+        const svAt = y => monthlySavings * Math.pow(1 + savingsGrowthRate / 100, y);
+        if (l.repayAtMaturity) {
+          cliffs.push({
+            k: l.id + 'b',
+            text: `到期還本：${l.name} 第 ${l.startYear + l.years} 年需一次清償（或轉貸）本金——再融資風險集中在同一個時點，升息或估值下修時最脆弱。`,
+            lvl: 'red'
+          });
+        } else if (l.grace > 0 && l.grace < l.years) {
+          const i0 = l.amount * l.rate / 100 / 12;
+          const i = l.rate / 100 / 12,
+            n = (l.years - l.grace) * 12;
+          const pmt = i > 0 ? l.amount * i / (1 - Math.pow(1 + i, -n)) : l.amount / n;
+          const sv = svAt(l.startYear + l.grace);
+          const pct = sv > 0 ? pmt / sv * 100 : Infinity;
+          cliffs.push({
+            k: l.id + 'g',
+            text: `寬限斷崖：${l.name} 第 ${l.startYear + l.grace} 年寬限結束，月付 ${i0.toFixed(2)} 萬 → ${pmt.toFixed(2)} 萬（×${(pmt / Math.max(i0, 1e-9)).toFixed(1)}),屆時約佔月儲蓄 ${isFinite(pct) ? pct.toFixed(0) + '%' : '∞'}。`,
+            lvl: pct > 50 ? 'red' : pct > 33 ? 'amber' : 'slate'
+          });
+        }
+      });
+      return cliffs.length ? /*#__PURE__*/React.createElement("div", {
+        className: "mt-1.5 space-y-1"
+      }, cliffs.map(cf => /*#__PURE__*/React.createElement("p", {
+        key: cf.k,
+        className: `text-[10px] leading-tight ${cf.lvl === 'red' ? 'text-red-600 font-bold' : cf.lvl === 'amber' ? 'text-amber-600' : 'text-slate-500'}`
+      }, "⚠ ", cf.text))) : null;
+    })(), spread < 2 && /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-amber-600 mt-1.5"
     }, "⚠ 有效報酬 ", f.effReturn.toFixed(1), "% 與最高貸款利率 ", maxRate.toFixed(1), "% 的利差僅 ", spread.toFixed(1), " 個百分點——這筆交易的期望值建立在很薄的地基上。"), /*#__PURE__*/React.createElement("div", {
       className: "mt-2 flex items-center gap-2 flex-wrap"
@@ -4993,6 +5096,11 @@ const App = () => {
       className: "text-[11px] text-slate-600 leading-relaxed space-y-1 list-disc list-inside"
     }, (() => {
       const c = [];
+      // ⓪ 結構定性（綜合判斷的一句話開場；描述結構性質，動詞留給使用者）
+      const gDead = f.pctCashBreak + f.pctMarginCall;
+      const gZero = f.pctNWZero;
+      const gStruct = gDead > 1 || gZero > 5 || stressData && !stressData.pass;
+      if (gStruct) c.push('【定性：不該持有的結構】閘門沒過關——先別談效益，這個結構本身需要改（降規模、拉長年期、避開會斷頭的貸款），改到能活著，再回來看下面。');else if (f.expTimeSavedSust >= 0.3 && f.dP10 >= 0) c.push('【定性：站得住的結構】三關都過：不會死、買得到時間、最壞情況也不吃虧。剩下的是「你要不要」，不是「能不能」——把下面的價格看完，這是你的選擇，不是模型的判決。');else if (f.expTimeSavedSust >= 0.3 && f.dP10 < 0) c.push('【定性：有效益、但左尾要吞】平均買得到時間，可是運氣差的世界你會比不借更窮——這是「賺得起、但輸得起嗎」的結構。能睜眼吞下最壞那一成，它就成立。');else if (f.dP10 < 0) c.push('【定性：你不需要的結構】買到的時間很少、壞運還倒虧——不是危險，是不划算。除非你要的是期望財富而不是提早自由，否則不借是更省事的答案。');else c.push('【定性：低效但無害的結構】它不會傷你，但也幫不了你多少——當儲蓄工具可以，當「提早財務自由」的槓桿不值得。');
       // ① 閘門
       if (f.pctFailUnion === 0) c.push(stressData ? stressData.pass ? '一萬個世界一次都沒死，而且升息＋保守假設的「壓力雙驗」也過了——結構這一關，是真的過了。' : '目前假設下沒死過，但壓力雙驗不過關：升息或保守假設下會出人命——結構還不能算過，先回左欄改。' : '一萬個世界一次都沒死——但這是「目前假設」下；按上面「壓力雙驗」確認升息＋保守假設也活得下來，才算真的過關。');else {
         const hard = f.pctCashBreak + f.pctMarginCall;
@@ -5000,32 +5108,28 @@ const App = () => {
         if (f.pctNWZero > 0.005) c.push(`${f.pctNWZero.toFixed(2)}% 的世界會經歷「帳面資不抵債」（淨值歸零）——房貸規則下銀行不會因此抽貸，照繳就能活，模擬也讓這些世界繼續走；但這建立在兩個最脆弱的假設上：利率永遠不變、你在淨值是負的那幾年每個月照按轉帳。${f.pctNWZero > 5 ? '這個比例已經高到：與其問賺多少，先問自己扛不扛得住水下歲月——不扛，就降規模。' : ''}`);
       }
       // ② 時間（依情境分支）
+      const lpct = f.p10BaseNet > 0 ? f.dP10 / f.p10BaseNet * 100 : null;
+      const lpStr = lpct === null ? '' : `（${lpct >= 0 ? '+' : ''}${lpct.toFixed(1)}%）`;
       const seqLoss = f.expTimeSaved > 0.05 ? (f.expTimeSaved - f.expTimeSavedSust) / f.expTimeSaved : 0;
       if (f.expTimeSavedSust >= 0.3) {
         c.push(`借這筆錢，平均提早 ${f.expTimeSavedSust.toFixed(1)} 年財務自由——運氣中等的世界省 ${f.tsSustP50.toFixed(1)} 年、最差一成只省 ${f.tsSustP10.toFixed(1)} 年${f.tsSustP10 < -0.005 ? '(其實是更晚）' : ''};另有 ${f.tsSustNegPct.toFixed(0)}% 的世界你反而更晚自由——平均數的另一面，要一起吞。${f.interestP50 >= 1 ? `這些時間是用約 ${f.interestP50.toFixed(0)} 萬利息買的，每提早一年約 ${Math.round(f.interestP50 / f.expTimeSavedSust)} 萬——值不值，看你的一年值多少。` : ''}`);
         if (seqLoss > 0.25) c.push(`順序風險警示：觸及口徑有 ${f.expTimeSaved.toFixed(2)} 年，要求「守住」後只剩 ${f.expTimeSavedSust.toFixed(2)} 年——${Math.round(seqLoss * 100)}% 蒸發在「摸到目標又被打回去」的世界裡；想把這段時間真的收進口袋，接近目標時開「累積期滑翔＋加速還本」把它鎖住。`);
-        if (f.dP10 >= 0) c.push(`運氣最差的一成世界，你仍比不借錢的自己多 ${Math.round(f.dP10)} 萬——左尾站得住，這比勝率漂亮更重要。`);else c.push(`運氣最差的一成世界，你比不借錢的自己少 ${Math.abs(Math.round(f.dP10))} 萬——想像那一天看著帳戶說「當初不借就好了」，先確定自己吞得下這句話，再進場。`);
+        if (f.dP10 >= 0) c.push(`運氣最差的一成世界，你仍比不借錢的自己多 ${Math.round(f.dP10)} 萬 ${lpStr}——左尾站得住，這比勝率漂亮更重要。`);else c.push(`運氣最差的一成世界，你比不借錢的自己少 ${Math.abs(Math.round(f.dP10))} 萬 ${lpStr}——想像那一天看著帳戶說「當初不借就好了」，先確定自己吞得下這句話，再進場。`);
       } else if (f.expTimeSavedSust >= 0) {
-        if (f.dP10 < 0) c.push(`這筆槓桿的問題不是「危險」（閘門見上），是「不需要」：只買到 ${f.expTimeSavedSust.toFixed(2)} 年（約 ${Math.max(1, Math.round(f.expTimeSavedSust * 12))} 個月），而運氣最差的一成世界還比不借少 ${Math.abs(Math.round(f.dP10))} 萬。你自己的儲蓄引擎已經夠強——付 ${f.interestP50.toFixed(0)} 萬確定的利息，買「期望多 ${Math.round(f.p50LevNet - f.p50BaseNet)} 萬、壞運倒虧、只提早幾個月」的交易，先想清楚買的到底是什麼。`);else c.push(`只買到 ${f.expTimeSavedSust.toFixed(2)} 年——你的引擎夠強，槓桿買不到時間；它剩下的意義是期望財富（中位多 ${Math.round(f.p50LevNet - f.p50BaseNet)} 萬），而且最差一成世界仍多 ${Math.round(f.dP10)} 萬——「無害但低效」的交易，做不做看你對這筆期望值的興趣。`);
+        if (f.dP10 < 0) c.push(`這筆槓桿的問題不是「危險」（閘門見上），是「不需要」：只買到 ${f.expTimeSavedSust.toFixed(2)} 年（約 ${Math.max(1, Math.round(f.expTimeSavedSust * 12))} 個月），而運氣最差的一成世界還比不借少 ${Math.abs(Math.round(f.dP10))} 萬 ${lpStr}。你自己的儲蓄引擎已經夠強——付 ${f.interestP50.toFixed(0)} 萬確定的利息，買「期望多 ${Math.round(f.p50LevNet - f.p50BaseNet)} 萬、壞運倒虧、只提早幾個月」的交易，先想清楚買的到底是什麼。`);else c.push(`只買到 ${f.expTimeSavedSust.toFixed(2)} 年——你的引擎夠強，槓桿買不到時間；它剩下的意義是期望財富（中位多 ${Math.round(f.p50LevNet - f.p50BaseNet)} 萬），而且最差一成世界仍多 ${Math.round(f.dP10)} 萬 ${lpStr}——「無害但低效」的交易，做不做看你對這筆期望值的興趣。`);
       } else {
-        c.push(`平均反而晚 ${Math.abs(f.expTimeSavedSust).toFixed(2)} 年自由、${f.tsSustNegPct.toFixed(0)}% 的世界更晚——這筆槓桿在時間維度是虧的；左尾若又為負（${Math.round(f.dP10)} 萬），它兩頭都沒買到東西。`);
+        if (f.dP10 < 0) c.push(`平均反而晚 ${Math.abs(f.expTimeSavedSust).toFixed(2)} 年自由、${f.tsSustNegPct.toFixed(0)}% 的世界更晚，左尾也為負（${Math.round(f.dP10)} 萬）——時間與財富兩頭都沒買到，這筆槓桿沒有存在的理由。`);else c.push(`平均反而晚 ${Math.abs(f.expTimeSavedSust).toFixed(2)} 年自由、${f.tsSustNegPct.toFixed(0)}% 的世界更晚——時間維度是虧的；但左尾為正（+${Math.round(f.dP10)} 萬），它退化成「純財富交易」：放棄時間效率、賭終值分佈——做不做，回到利息與左尾的比價，別再用「提早自由」說服自己。`);
       }
       // ③ 行為
       if (f.uwP50Lev >= 5) c.push(`中位世界會有 ${f.uwP50Lev.toFixed(1)} 年資產不創新高——水下第 ${Math.ceil(f.uwP50Lev)} 年還按得住不賣，才有資格領上面的數字。`);
       // ④ 滑翔
       if (glideEnabled) c.push(`滑翔已開：兩側同策略下，中位終值會比不開低——這不是虧損，是拿上檔換「守住」的保費；看②的實線（守住）與虛線（觸及）貼多近，就知道這張保單有沒有在工作。`);
-      // ⑤ 名目直覺校準（長年期）
-      if (displayMode === 'nominal' && years >= 20) {
-        const defl = Math.pow(1 + inflation / 100, years);
-        const geoNow = geoOf(f.effReturn, f.effVol);
-        c.push(`直覺校準：上面的終值是「${years} 年後的名目數字」——中位 ${Math.round(f.p50LevNet).toLocaleString()} 萬 ≈ 今日購買力 ${Math.round(f.p50LevNet / defl).toLocaleString()} 萬（通膨 ${inflation}%）。長期複利本來就會長出讓人懷疑算錯的數字（名目幾何年化 ${geoNow.toFixed(1)}%，${years} 年=${Math.pow(1 + geoNow / 100, years).toFixed(1)} 倍）；懷疑時切「實質」口徑再讀一次，而不是懷疑數學——引擎終值有 σ=0 封閉解逐月對帳護著。`);
-      }
       return c;
     })().map((s2, i) => /*#__PURE__*/React.createElement("li", {
       key: i
     }, s2))), /*#__PURE__*/React.createElement("p", {
       className: "text-[9px] text-slate-400 mt-1.5"
-    }, "依目前戳記（假設）自動生成；換假設，評語跟著換。它描述數字，不替你做決定。")));
+    }, "依目前戳記（假設）自動生成；換假設，評語跟著換。這是對數字的翻譯，不是投資建議——動詞（借、不借、借多少）永遠是你的。真正該做的功課，是回左欄把假設換成「你敢在別人面前為它辯護」的保守值，再讀一次這段。")));
   })(), stats.isIdentical && /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400"
   }, "目前無任何貸款金額——有貸/無貸兩條路徑相同，評估無對照意義。到左欄貸款組合填一筆，或從「操作模擬結論」載入情境。")), /*#__PURE__*/React.createElement("div", {
@@ -5042,7 +5146,7 @@ const App = () => {
     className: "text-xs text-slate-400 mt-1 font-medium"
   }, "檢視策略的死亡風險：曲線越陡峭，代表爆倉歸零的機率越高"), selectedUniverseId === null && viewMode !== 'targetProb' && viewMode !== 'survival' && viewMode !== 'cashFlow' && viewMode !== 'drawdown' && /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 mt-1 font-medium"
-  }, "等距抽樣 50 條市場路徑（同種子可重現），展示真實的波動風險 (暖色=有貸， 冷色=無貸）"), viewMode === 'targetProb' && /*#__PURE__*/React.createElement("p", {
+  }, "等距抽樣 50 條市場路徑（同種子可重現），展示真實的波動風險 （暖色=有貸， 冷色=無貸）"), viewMode === 'targetProb' && /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 mt-1 font-medium"
   }, "顯示有多少比例的平行宇宙在特定時間點前已達成 ", targetAmount, " 萬目標"), viewMode === 'cashFlow' && /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 mt-1 font-medium"
@@ -5157,7 +5261,7 @@ const App = () => {
       return val > 10000 || val < -10000 ? (val / 10000).toFixed(1) + '億' : val.toLocaleString();
     },
     label: {
-      value: viewMode === 'netWorth' ? '淨值 (萬）' : viewMode === 'survival' ? '生存機率 (%）' : viewMode === 'leverage' ? '槓桿倍數 (x)' : viewMode === 'cashFlow' ? '金額 (萬）' : viewMode === 'drawdown' ? '回檔幅度 (%）' : '達標機率 (%）',
+      value: viewMode === 'netWorth' ? '淨值 (萬）' : viewMode === 'survival' ? '生存機率 (%）' : viewMode === 'leverage' ? '槓桿倍數 (x)' : viewMode === 'cashFlow' ? '金額 （萬）' : viewMode === 'drawdown' ? '回檔幅度 (%）' : '達標機率 (%）',
       angle: -90,
       position: 'insideLeft',
       offset: -5,
@@ -5577,7 +5681,7 @@ const App = () => {
     className: "px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed space-y-5 border-t border-slate-100"
   }, /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-black text-slate-800 text-sm mb-1.5 mt-3"
-  }, "一、這個工具回答什麼問題"), /*#__PURE__*/React.createElement("p", null, "「拿房子增貸出來投資指數，到底會怎樣？」——不是回答會不會賺，而是回答三件事：", /*#__PURE__*/React.createElement("b", null, "失敗的機率"), "(多少比例的平行宇宙走向爆倉或水下）、", /*#__PURE__*/React.createElement("b", null, "失敗的方式"), "(繳不出錢？被斷頭？還是只是帳面難看？）、", /*#__PURE__*/React.createElement("b", null, "成功時多賺多少"), "(對照同樣市場下不借錢的自己）。它是壓力測試工具，不是報酬預測工具。")), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
+  }, "一、這個工具回答什麼問題"), /*#__PURE__*/React.createElement("p", null, "「拿房子增貸出來投資指數，到底會怎樣？」——不是回答會不會賺，而是回答三件事：", /*#__PURE__*/React.createElement("b", null, "失敗的機率"), "（多少比例的平行宇宙走向爆倉或水下）、", /*#__PURE__*/React.createElement("b", null, "失敗的方式"), "（繳不出錢？被斷頭？還是只是帳面難看？）、", /*#__PURE__*/React.createElement("b", null, "成功時多賺多少"), "（對照同樣市場下不借錢的自己）。它是壓力測試工具，不是報酬預測工具。")), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "★ 標準化評估框架（v4)"), /*#__PURE__*/React.createElement("ul", {
     className: "space-y-1.5 list-disc list-inside"
@@ -5585,7 +5689,7 @@ const App = () => {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "二、核心原理"), /*#__PURE__*/React.createElement("ul", {
     className: "list-disc list-inside space-y-1.5"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "同種子對照"), ":每一條路徑裡，「有貸款」與「無貸款」每個月吃到一模一樣的市場漲跌。兩者的差異純粹來自槓桿，不摻任何運氣差。這是整個工具的比較基礎。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "報酬口徑"), ":輸入是年「算術平均」報酬與年標準差（名目、含通膨）。長期複合（幾何）報酬會因波動拖累低約 σ²/2——輸 8%/20%，長期複合約 6%。這不是 bug,是數學。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三報酬引擎"), ":常態分佈=你自訂假設的世界；歷史抽樣=歷史的「形狀」（肥尾/連跌）配上你的報酬假設；純歷史回測=1928 年以來每一段真實歷史各走一遍。三個引擎給的不是三個答案，是同一個問題的三面。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "失敗三因子"), ":①淨值歸零（帳面曾經資不抵債，可回升）②現金流斷裂（還款把投資部位抽乾，不可逆）③融資斷頭（維持率破線強制清算，不可逆）。房貸的死法幾乎都是②,融資的死法是③;①是心理壓力指標，不是死亡。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "貸款現金流模型"), ":支援寬限期、本息攤還、到期一次還本、借新還舊、維持率斷頭，三筆貸款可混搭。每月還款從投資部位扣——這就是槓桿的真實成本：不是利率，是「下跌時還被迫賣股繳款」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "累積期滑翔＋加速還本"), ":接近目標時逐步降股；可加開「加速還本」——達進度門檻後每月用盈餘提前還款（利率高者優先、月付不變提早清償）。防的不是平均報酬，是「快到終點時被一波大跌打回去」的順序風險；還本則是把帳面進度鎖成真的。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "計價口徑（名目/實質）"), ":實質模式把所有金額換成今日購買力——貸款契約是名目的，通膨會替你侵蝕債務，這個效果已內含。失敗率不因口徑而變（數學恆等，逐路徑測試驗證），變的是「目標 1000 萬」的真實難度。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "資產配置與市場環境"), ":股票 w% ＋ 美國 10 年期公債 (1−w）%，每月再平衡。調整權重會自動帶入常態引擎的 μ/σ(仍可手調）；歷史類引擎在股票 <100% 時做「聯合年份抽樣」——同一年的股/債報酬成對取出，保留股債相依性（2008 股 −36.6%、債 +20.1% 的避險效果真的進了模擬）。滑翔的「達標時股票比例」直接作用於此權重。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "同種子對照"), ":每一條路徑裡，「有貸款」與「無貸款」每個月吃到一模一樣的市場漲跌。兩者的差異純粹來自槓桿，不摻任何運氣差。這是整個工具的比較基礎。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "報酬口徑"), ":輸入是年「算術平均」報酬與年標準差（名目、含通膨）。長期複合（幾何）報酬會因波動拖累低約 σ²/2——輸 8%/20%，長期複合約 6%。這不是 bug,是數學。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三報酬引擎"), ":常態分佈=你自訂假設的世界；歷史抽樣=歷史的「形狀」（肥尾/連跌）配上你的報酬假設；純歷史回測=1928 年以來每一段真實歷史各走一遍。三個引擎給的不是三個答案，是同一個問題的三面。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "失敗三因子"), ":①淨值歸零（帳面曾經資不抵債，可回升）②現金流斷裂（還款把投資部位抽乾，不可逆）③融資斷頭（維持率破線強制清算，不可逆）。房貸的死法幾乎都是②,融資的死法是③;①是心理壓力指標，不是死亡。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "貸款現金流模型"), ":支援寬限期、本息攤還、到期一次還本、借新還舊、維持率斷頭，三筆貸款可混搭。每月還款從投資部位扣——這就是槓桿的真實成本：不是利率，是「下跌時還被迫賣股繳款」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "累積期滑翔＋加速還本"), ":接近目標時逐步降股；可加開「加速還本」——達進度門檻後每月用盈餘提前還款（利率高者優先、月付不變提早清償）。防的不是平均報酬，是「快到終點時被一波大跌打回去」的順序風險；還本則是把帳面進度鎖成真的。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "計價口徑（名目/實質）"), ":實質模式把所有金額換成今日購買力——貸款契約是名目的，通膨會替你侵蝕債務，這個效果已內含。失敗率不因口徑而變（數學恆等，逐路徑測試驗證），變的是「目標 1000 萬」的真實難度。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "資產配置與市場環境"), ":股票 w% ＋ 美國 10 年期公債 （1−w）%，每月再平衡。調整權重會自動帶入常態引擎的 μ/σ（仍可手調）；歷史類引擎在股票 <100% 時做「聯合年份抽樣」——同一年的股/債報酬成對取出，保留股債相依性（2008 股 −36.6%、債 +20.1% 的避險效果真的進了模擬）。滑翔的「達標時股票比例」直接作用於此權重。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "三、新手操作流程（六步）"), /*#__PURE__*/React.createElement("ol", {
     className: "list-decimal list-inside space-y-1.5"
@@ -5593,19 +5697,19 @@ const App = () => {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "四、判讀指南"), /*#__PURE__*/React.createElement("ul", {
     className: "list-disc list-inside space-y-1.5"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "模擬勝率（已降權）"), ":有貸款最終淨值 > 無貸款的宇宙比例。它只數次數、不看幅度——評估卡改以「配對分佈」為主：最差一成世界的 Δ財富（dP10）與負佔比才看得見輸的深度。勝率 70% 的意思仍然是「十次有三次，你冒了風險還輸給不借錢的自己」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "失敗率分解條"), ":先看「現金流斷裂」與「融資斷頭」——這兩個是死，不可逆；「淨值歸零」是水下，難看但可活。任何吸收性失敗 > 0% 都值得回頭調結構，而不是說服自己機率小。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "P10 / P50 / P90"), ":P50 是「普通運氣」，P10 是「壞運氣但沒到極端」。決策看 P10:壞運氣劇本你能不能承受、會不會被迫中途下車。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "現金流警示"), ":紅色代表「儲蓄 < 還款」，缺口要賣股補——在下跌年這就是死亡螺旋的入口。寬限期結束與到期還本的月份要特別看。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "最大回檔 (MDD)"), ":槓桿放大回檔。帳面 −60% 你真的撐得住嗎？模擬不會恐慌，你會。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三引擎比較表"), ":同種子同參數並排，是本工具的結論頁。看兩件事：①三列的「斷裂/斷頭」是否全零——結構安全性不該依賴報酬假設；②勝率隨引擎的落差——落差大代表結論對「歷史形狀」敏感，假設要更保守。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "實質口徑"), ":30 年、通膨 2% 下，名目 1000 萬只剩今日的 552 萬購買力。長年期一律用實質口徑驗一次達標率；失敗率不變，但「贏」的定義誠實多了。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "期望節省時間（⏱,守住口徑）"), ":E[min(H, 無貸守住年） − min(H, 有貸守住年）]——「守住」=最後一次上穿目標後不再跌破；未守住記滿期，不受倖存者偏誤灌水，等於評估卡兩條實線間的面積。「觸及口徑」（第一次摸到）是它的樂觀版本，兩者的差=順序風險。永遠搭配", /*#__PURE__*/React.createElement("b", null, "負佔比"), "(槓桿讓你更晚自由的世界比例）與逐世界分佈 P10/P50/P90 讀——平均數是允許人不看尾巴的那種數字。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三引擎交叉讀法"), ":常態分佈給「你的假設下」的答案；歷史抽樣檢驗「歷史形狀」下同樣假設是否更危險（通常肥尾讓斷頭變多）；純歷史回測勝率通常最高——因為美股百年算術均值 11.9% 遠高於保守輸入，把它當「歷史上限」看，不要當期望值。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "模擬勝率（已降權）"), ":有貸款最終淨值 > 無貸款的宇宙比例。它只數次數、不看幅度——評估卡改以「配對分佈」為主：最差一成世界的 Δ財富（dP10）與負佔比才看得見輸的深度。勝率 70% 的意思仍然是「十次有三次，你冒了風險還輸給不借錢的自己」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "失敗率分解條"), ":先看「現金流斷裂」與「融資斷頭」——這兩個是死，不可逆；「淨值歸零」是水下，難看但可活。任何吸收性失敗 > 0% 都值得回頭調結構，而不是說服自己機率小。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "P10 / P50 / P90"), ":P50 是「普通運氣」，P10 是「壞運氣但沒到極端」。決策看 P10:壞運氣劇本你能不能承受、會不會被迫中途下車。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "現金流警示"), ":紅色代表「儲蓄 < 還款」，缺口要賣股補——在下跌年這就是死亡螺旋的入口。寬限期結束與到期還本的月份要特別看。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "最大回檔 (MDD)"), ":槓桿放大回檔。帳面 −60% 你真的撐得住嗎？模擬不會恐慌，你會。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三引擎比較表"), ":同種子同參數並排，是本工具的結論頁。看兩件事：①三列的「斷裂/斷頭」是否全零——結構安全性不該依賴報酬假設；②勝率隨引擎的落差——落差大代表結論對「歷史形狀」敏感，假設要更保守。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "實質口徑"), ":30 年、通膨 2% 下，名目 1000 萬只剩今日的 552 萬購買力。長年期一律用實質口徑驗一次達標率；失敗率不變，但「贏」的定義誠實多了。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "期望節省時間（⏱,守住口徑）"), ":E[min(H, 無貸守住年） − min(H, 有貸守住年）]——「守住」=最後一次上穿目標後不再跌破；未守住記滿期，不受倖存者偏誤灌水，等於評估卡兩條實線間的面積。「觸及口徑」（第一次摸到）是它的樂觀版本，兩者的差=順序風險。永遠搭配", /*#__PURE__*/React.createElement("b", null, "負佔比"), "（槓桿讓你更晚自由的世界比例）與逐世界分佈 P10/P50/P90 讀——平均數是允許人不看尾巴的那種數字。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "三引擎交叉讀法"), ":常態分佈給「你的假設下」的答案；歷史抽樣檢驗「歷史形狀」下同樣假設是否更危險（通常肥尾讓斷頭變多）；純歷史回測勝率通常最高——因為美股百年算術均值 11.9% 遠高於保守輸入，把它當「歷史上限」看，不要當期望值。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "五、決策框架（結論）"), /*#__PURE__*/React.createElement("p", {
     className: "mb-1.5"
   }, "增貸投資合理的前提，全部滿足才考慮："), /*#__PURE__*/React.createElement("ul", {
     className: "list-disc list-inside space-y-1.5"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "利差"), ":保守報酬假設（不是歷史均值）減貸款利率 ≥ 3%。利差 < 2% 是在為銀行打工還自扛全部風險。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "現金流覆蓋"), ":攤還期（非寬限期）月付 ≤ 月儲蓄的 50%，且利率 +2% 情境下仍 ≤ 100%。還款永遠不該依賴賣股。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "零吸收性失敗"), ":常態引擎下現金流斷裂+融資斷頭 = 0%，且利率 +2% 情境仍為 0%。水下（淨值歸零）機率可以接受，死不行。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "心理帳戶"), ":P10 路徑的最深回檔與最長水下期，先想像自己身處其中三年。撐不住就降槓桿，模擬器改參數三秒，現實中斷頭一次十年。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "實質檢核"), ":長年期目標一律以實質口徑再驗一次——名目達標、實質沒達標，等於用縮水的尺宣布勝利。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "降槓桿的出口"), ":進場前就寫好出口——「進度到 X% 後每月提前還 Y 萬」。加速還本功能就是拿來預演這條出口的：接近目標時，把帳面優勢換成真的清償，而不是繼續曝險。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "用時間讀槓桿"), ":把「貸款總利息 ÷ 期望省時」算出來——那是你「每提早一年」付的價格，再跟你的時間價值比。紅線：期望省時 < 0.5 年而任何失敗因子 > 0,這筆槓桿買的是寂寞；本業月存能力越強，這條紅線越容易踩到——不是貸款變差了，是你不需要它。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "紅線"), ":到期一次還本而無明確還款來源、質押維持率緩衝 < 50%、寬限期結束月付跳升超過儲蓄——任一條中，直接不做。")), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "利差"), ":保守報酬假設（不是歷史均值）減貸款利率 ≥ 3%。利差 < 2% 是在為銀行打工還自扛全部風險。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "現金流覆蓋"), ":攤還期（非寬限期）月付 ≤ 月儲蓄的 50%，且利率 +2% 情境下仍 ≤ 100%。還款永遠不該依賴賣股。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "零吸收性失敗"), ":常態引擎下現金流斷裂+融資斷頭 = 0%，且利率 +2% 情境仍為 0%。水下（淨值歸零）機率可以接受，死不行。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "心理帳戶"), ":P10 路徑的最深回檔與最長水下期，先想像自己身處其中三年。撐不住就降槓桿，模擬器改參數三秒，現實中斷頭一次十年。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "實質檢核"), ":長年期目標一律以實質口徑再驗一次——名目達標、實質沒達標，等於用縮水的尺宣布勝利。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "降槓桿的出口"), ":進場前就寫好出口——「進度到 X% 後每月提前還 Y 萬」。加速還本功能就是拿來預演這條出口的：接近目標時，把帳面優勢換成真的清償，而不是繼續曝險。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "目標怎麼訂"), ":用「年支出 ÷ 提領率」反推（目標金額下方有計算器；4%=25 倍、2.5%=40 倍年支出），而不是湊整數。省時指標是「目標相對」的駝峰函數——目標太容易（自己很快就到）或太難（兩邊都到不了、全被記滿期），省時都趨近 0;只有目標落在「無貸很慢、有貸搆得到」的區間，時間透鏡才有鑑別力。目標換了，整張評估卡要重讀。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "用時間讀槓桿"), ":把「貸款總利息 ÷ 期望省時」算出來——那是你「每提早一年」付的價格，再跟你的時間價值比。紅線：期望省時 < 0.5 年而任何失敗因子 > 0,這筆槓桿買的是寂寞；本業月存能力越強，這條紅線越容易踩到——不是貸款變差了，是你不需要它。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "紅線"), ":到期一次還本而無明確還款來源、質押維持率緩衝 < 50%、寬限期結束月付跳升超過儲蓄——任一條中，直接不做。")), /*#__PURE__*/React.createElement("p", {
     className: "mt-1.5"
   }, "本工具管「累積期加槓桿」；到了提領期，請交棒給退休提領模擬器——那邊管的是反向問題：錢怎麼安全地花掉。")), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-black text-slate-800 text-sm mb-1.5"
   }, "六、常見問題"), /*#__PURE__*/React.createElement("ul", {
     className: "list-disc list-inside space-y-1.5"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼調參數結果不跳動？"), "——同種子設計：不換種子時，看到的差異是純參數效果。想看運氣的影響按「重擲」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼純歷史回測勝率特別高？"), "——原始歷史不做平移，美股百年算術均值 11.9%、對 2.2% 利率是巨大利差。它回答「歷史重演會怎樣」，不回答「未來期望如何」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼輸 8% 但長期年化只有 6%？"), "——算術 vs 幾何。波動吃掉約 σ²/2,這是輸入口徑的定義，見模型限制。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "歷史引擎為什麼斷頭偏少？"), "——年報酬按月均攤，月內急跌被抹平。評估斷頭請以常態引擎為準或上調維持率門檻。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "一萬條路徑會不會很慢？"), "——約 1–3 秒（30 年期較久），運算時頂部有紫色進度條、按鈕顯示「運算中」。手機較慢可把「模擬路徑次數」調低，統計誤差：一萬條的勝率抖動約 ±0.5%、五百條約 ±2%。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "我的設定會保存嗎？"), "——會，每次調整自動存在此瀏覽器（localStorage),下次開啟自動載入；「分享設定連結」把全部參數（含貸款組合與種子）編進網址，對方開啟即重現同一結果；「重設全部」清除保存並回到預設。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "調整配置後帶入的報酬為什麼比我原本填的高？"), "——因為帶入值取自歷史：美股 1928–2025 年算術均值 11.9%，通常比保守假設（如 8%）樂觀。帶入後你可以直接把 μ 調回保守值（常態引擎永遠吃滑桿）；「操作模擬結論」第 5 條就是這件事的實例——口徑差一點，看到的風險差一個數量級。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "名目和實質差在哪？"), "——名目是「帳面數字」，實質是「今日購買力」。切實質後失敗率一個百分點都不會變（這是數學恆等，測試逐路徑驗證過），變的是達標難度與最終水位——通膨同時侵蝕你的資產目標與你的債務。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "加速還本的規則？"), "——達「啟動進度」後，每月用投資部位的盈餘提前還款：利率高者優先、月付不變所以是提早清償、部位不足就跳過（絕不因還本把自己還到斷裂）。到期還本與借新還舊都改按當下實際餘額清償。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "期望省 0.42 年（守住口徑），值得借 200 萬嗎？"), "——用兩種讀法。時間讀法：C1 情境三十年總利息約 82 萬，買到 0.42 年守住的自由，「每提早一年」約 196 萬——本業強的人會覺得貴。財富讀法：同一筆交易 P50 多 1,731 萬、失敗貼零——期望值顯著為正。兩個讀法都對，回答的是不同問題：「我需要它嗎」vs「它划算嗎」。兩個都要看，缺一個都會做錯決定。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "模擬勝率 90% 是不是就該做？"), "——不是。勝率沒有計入你的心理承受度、工作穩定度、家庭現金需求。模型管數學，剩下的是你的事。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼調參數結果不跳動？"), "——同種子設計：不換種子時，看到的差異是純參數效果。想看運氣的影響按「重擲」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼純歷史回測勝率特別高？"), "——原始歷史不做平移，美股百年算術均值 11.9%、對 2.2% 利率是巨大利差。它回答「歷史重演會怎樣」，不回答「未來期望如何」。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "為什麼輸 8% 但長期年化只有 6%？"), "——算術 vs 幾何。波動吃掉約 σ²/2,這是輸入口徑的定義，見模型限制。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "歷史引擎為什麼斷頭偏少？"), "——年報酬按月均攤，月內急跌被抹平。評估斷頭請以常態引擎為準或上調維持率門檻。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "一萬條路徑會不會很慢？"), "——約 1–3 秒（30 年期較久），運算時頂部有紫色進度條、按鈕顯示「運算中」。手機較慢可把「模擬路徑次數」調低，統計誤差：一萬條的勝率抖動約 ±0.5%、五百條約 ±2%。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "我的設定會保存嗎？"), "——會，每次調整自動存在此瀏覽器（localStorage),下次開啟自動載入；「分享設定連結」把全部參數（含貸款組合與種子）編進網址，對方開啟即重現同一結果；「重設全部」清除保存並回到預設。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "調整配置後帶入的報酬為什麼比我原本填的高？"), "——因為帶入值取自歷史：美股 1928–2025 年算術均值 11.9%，通常比保守假設（如 8%）樂觀。帶入後你可以直接把 μ 調回保守值（常態引擎永遠吃滑桿）；「操作模擬結論」第 5 條就是這件事的實例——口徑差一點，看到的風險差一個數量級。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "名目和實質差在哪？"), "——名目是「帳面數字」，實質是「今日購買力」。切實質後失敗率一個百分點都不會變（這是數學恆等，測試逐路徑驗證過），變的是達標難度與最終水位——通膨同時侵蝕你的資產目標與你的債務。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "加速還本的規則？"), "——達「啟動進度」後，每月用投資部位的盈餘提前還款：利率高者優先、月付不變所以是提早清償、部位不足就跳過（絕不因還本把自己還到斷裂）。到期還本與借新還舊都改按當下實際餘額清償。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "期望省 0.42 年（守住口徑），值得借 200 萬嗎？"), "——用兩種讀法。時間讀法：C1 情境三十年總利息約 82 萬，買到 0.42 年守住的自由，「每提早一年」約 196 萬——本業強的人會覺得貴。財富讀法：同一筆交易 P50 多 1,730 萬、失敗貼零——期望值顯著為正。兩個讀法都對，回答的是不同問題：「我需要它嗎」vs「它划算嗎」。兩個都要看，缺一個都會做錯決定。"), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "模擬勝率 90% 是不是就該做？"), "——不是。勝率沒有計入你的心理承受度、工作穩定度、家庭現金需求。模型管數學，剩下的是你的事。"))), /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h5", {
     className: "font-bold text-slate-800 text-sm mb-2 flex items-center gap-1.5"
   }, /*#__PURE__*/React.createElement(AlertTriangle, {
     className: "w-4 h-4 text-amber-600"
@@ -5623,7 +5727,7 @@ const App = () => {
     className: "text-sm font-bold text-amber-900 mb-2"
   }, "模型限制與校正提醒 (Model Disclaimers)"), /*#__PURE__*/React.createElement("ul", {
     className: "text-xs text-amber-800 space-y-1.5 list-disc list-inside opacity-90"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("strong", null, "先記三件事"), "：①稅前、利率與房價固定、單一～雙資產——真實世界更糟；②歷史年報酬按月均攤，斷頭判定偏樂觀；③模擬給的是後果分佈，", /*#__PURE__*/React.createElement("b", null, "不是投資建議"), "。"), /*#__PURE__*/React.createElement("li", null, "完整的模型限制與校正提醒（17 條）已整合進頁尾「", /*#__PURE__*/React.createElement("b", null, "進階手冊"), "」最後一節；動手前請至少讀過一次。")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("strong", null, "先記三件事"), "：①稅前、利率與房價固定、單一～雙資產——真實世界更糟；②歷史年報酬按月均攤，且質押維持率以「全部總資產 ÷ 融資負債」計算——等於假設你永遠願意、且來得及把整個投資組合補進擔保品；實務上銀行只盯設質的那批股票，斷頭風險因此被系統性低估，質押情境請自行加嚴；③借新還舊/轉貸不含手續費、違約金與聯徵審核風險——模型裡的轉貸永遠核得過，現實未必；④失業壓測沒有專屬按鈕：手動把月儲蓄歸零再跑一次，就是你的失業情境；⑤③模擬給的是後果分佈，", /*#__PURE__*/React.createElement("b", null, "不是投資建議"), "。"), /*#__PURE__*/React.createElement("li", null, "完整的模型限制與校正提醒（17 條）已整合進頁尾「", /*#__PURE__*/React.createElement("b", null, "進階手冊"), "」最後一節；動手前請至少讀過一次。")), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 pt-3 border-t border-amber-200/50"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowHistory(!showHistory),
@@ -5657,27 +5761,7 @@ const App = () => {
     className: "max-w-7xl mx-auto mt-6 mb-2 text-center space-y-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] text-slate-400"
-  }, "本工具完全免費・無廣告・所有輸入資料只留在你的瀏覽器，不會上傳任何伺服器。"), (SPONSOR_URL_TW || SPONSOR_URL) && /*#__PURE__*/React.createElement("div", {
-    className: "space-y-2"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[10px] text-slate-400"
-  }, "覺得有幫助？可以請作者喝杯咖啡："), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap items-center justify-center gap-2"
-  }, SPONSOR_URL_TW && /*#__PURE__*/React.createElement("a", {
-    href: SPONSOR_URL_TW,
-    target: "_blank",
-    rel: "noopener noreferrer",
-    className: "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold transition-colors"
-  }, /*#__PURE__*/React.createElement(Coffee, {
-    size: 14
-  }), " 請我喝杯咖啡（台灣）"), SPONSOR_URL && /*#__PURE__*/React.createElement("a", {
-    href: SPONSOR_URL,
-    target: "_blank",
-    rel: "noopener noreferrer",
-    className: "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 text-xs font-bold transition-colors"
-  }, /*#__PURE__*/React.createElement(Coffee, {
-    size: 14
-  }), " 請我喝杯咖啡（國際）")))), /*#__PURE__*/React.createElement("div", {
+  }, "本工具完全免費・無廣告・所有輸入資料只留在你的瀏覽器，不會上傳任何伺服器。")), /*#__PURE__*/React.createElement("div", {
     className: "fixed bottom-4 right-4"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
